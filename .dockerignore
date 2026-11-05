@@ -1,0 +1,16 @@
+.git
+.github
+.idea
+.vscode
+ansible
+k8s
+docs
+src
+*.md
+target/classes
+target/test-classes
+target/surefire-reports
+target/maven-status
+target/maven-archiver
+target/generated-sources
+target/generated-test-sources
