@@ -22,7 +22,7 @@ spec:
       containers:
         - name: robo-advisor
           # The tag is replaced by the Ansible playbook with the commit SHA tag on every deploy
-          image: rahulraghavendrar/robo-advisor:latest
+          image: rahul474/robo-advisor:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -43,5 +43,5 @@ spec:
             httpGet:
               path: /api/health
               port: 8080
-            initialDelaySeconds: 45
+            initialDelaySeconds: 60
             periodSeconds: 10

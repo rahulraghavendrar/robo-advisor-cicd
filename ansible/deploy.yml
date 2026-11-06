@@ -1,5 +1,5 @@
 ---
-# Deploys (or updates) the RoboAdvisor application on Kubernetes.
+# Deploys (or updates) the RoboAdvisor application on Kubernetes (k3s on AWS EC2).
 # Usage: ansible-playbook -i ansible/inventory.ini ansible/deploy.yml -e "image=<user>/robo-advisor:<tag>"
 
 - name: Deploy RoboAdvisor to Kubernetes
@@ -9,8 +9,8 @@
   vars:
     app_name: robo-advisor
     manifest_dir: "{{ playbook_dir }}/../k8s"
-    image: "rahulraghavendrar/robo-advisor:latest"
-    rollout_timeout: 180s
+    image: "rahul474/robo-advisor:latest"
+    rollout_timeout: 300s
 
   tasks:
     - name: Check that kubectl can reach the cluster

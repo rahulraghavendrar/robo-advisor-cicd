@@ -79,9 +79,9 @@ jobs:
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/${IMAGE_NAME}:${TAG}
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/${IMAGE_NAME}:latest
 
-  # ---------------- Stage 3: Deploy to Azure Kubernetes Service using Ansible ----------------
+  # ---------------- Stage 3: Deploy to Kubernetes (k3s) on AWS EC2 using Ansible ----------------
   deploy:
-    name: Deploy to AKS (Ansible)
+    name: Deploy to AWS EC2 k3s (Ansible)
     runs-on: ubuntu-latest
     needs: docker
     steps:
@@ -94,14 +94,14 @@ jobs:
       - name: Install kubectl
         uses: azure/setup-kubectl@v4
 
-      - name: Configure access to the AKS cluster
+      - name: Configure access to the k3s cluster on EC2
         env:
           KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
         run: |
           mkdir -p ~/.kube
           printf '%s' "$KUBE_CONFIG" > ~/.kube/config
           chmod 600 ~/.kube/config
-          kubectl get nodes
+          kubectl get nodes -o wide
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -122,17 +122,22 @@ jobs:
           kubectl get deployment robo-advisor
           kubectl get pods -l app=robo-advisor -o wide
           kubectl get service robo-advisor-service
+          kubectl describe deployment robo-advisor | grep Image
 
-          echo "Waiting for external IP of the LoadBalancer service..."
+          # Public IP of the EC2 instance, taken from the kubeconfig server address
+          HOST=$(kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}' | sed -E 's#^https://##; s#:[0-9]+$##')
+          echo "Application URL: http://$HOST"
+
+          OK=0
           for i in $(seq 1 30); do
-            IP=$(kubectl get service robo-advisor-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-            if [ -n "$IP" ]; then break; fi
-            sleep 10
+            if HEALTH=$(curl -fs --max-time 5 http://$HOST/api/health); then OK=1; break; fi
+            echo "Application not ready yet, retrying..."
+            sleep 5
           done
-          echo "Application URL: http://$IP"
+          if [ "$OK" != "1" ]; then echo "Application not reachable"; exit 1; fi
+          echo "$HEALTH"
 
-          curl -f --retry 10 --retry-delay 6 --retry-all-errors http://$IP/api/health
-          echo ""
           echo "### Deployment successful :rocket:" >> $GITHUB_STEP_SUMMARY
-          echo "Application URL: http://$IP" >> $GITHUB_STEP_SUMMARY
+          echo "Application URL: http://$HOST" >> $GITHUB_STEP_SUMMARY
           echo "Image tag: ${TAG}" >> $GITHUB_STEP_SUMMARY
+          echo "Health check: $HEALTH" >> $GITHUB_STEP_SUMMARY
