@@ -12,5 +12,5 @@ metadata:
 data:
   APP_TITLE: "RoboAdvisor Lite"
   APP_ENVIRONMENT: "production"
-  APP_THEME_COLOR: "#1f4e79"
+  APP_THEME_COLOR: "#0b7a3e"
   APP_MESSAGE: "Deployed on Kubernetes via CI/CD pipeline"
