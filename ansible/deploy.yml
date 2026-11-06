@@ -23,7 +23,19 @@
         regexp: '^(\s*image:\s*).*$'
         replace: '\g<1>{{ image }}'
 
-    - name: Apply Kubernetes manifests (deployment + service)
+    - name: Calculate checksum of the ConfigMap file
+      ansible.builtin.stat:
+        path: "{{ manifest_dir }}/configmap.yaml"
+        checksum_algorithm: sha256
+      register: configmap_file
+
+    - name: Put the ConfigMap checksum into the deployment (restarts pods when config changes)
+      ansible.builtin.replace:
+        path: "{{ manifest_dir }}/deployment.yaml"
+        regexp: '^(\s*checksum/config:\s*).*$'
+        replace: '\g<1>"{{ configmap_file.stat.checksum }}"'
+
+    - name: Apply Kubernetes manifests (configmap + deployment + service)
       ansible.builtin.command: kubectl apply -f {{ manifest_dir }}
       register: apply_result
       changed_when: "'configured' in apply_result.stdout or 'created' in apply_result.stdout"
@@ -35,6 +47,15 @@
     - name: Wait for the rolling update to finish
       ansible.builtin.command: kubectl rollout status deployment/{{ app_name }} --timeout={{ rollout_timeout }}
       changed_when: false
+
+    - name: Get the ConfigMap that is now in the cluster
+      ansible.builtin.command: kubectl get configmap robo-advisor-config -o jsonpath={.data}
+      register: configmap_data
+      changed_when: false
+
+    - name: Show ConfigMap values
+      ansible.builtin.debug:
+        var: configmap_data.stdout
 
     - name: Get running pods
       ansible.builtin.command: kubectl get pods -l app={{ app_name }} -o wide

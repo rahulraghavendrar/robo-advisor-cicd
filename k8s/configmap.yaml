@@ -1,0 +1,16 @@
+# Non-sensitive application settings.
+# Every key is injected into the pods as an environment variable (envFrom in deployment.yaml).
+# Spring Boot maps APP_TITLE -> app.title, APP_THEME_COLOR -> app.theme.color, and so on,
+# so these values override the defaults in application.properties.
+# Changing a value here and pushing makes the pipeline apply the ConfigMap and roll out new pods.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: robo-advisor-config
+  labels:
+    app: robo-advisor
+data:
+  APP_TITLE: "RoboAdvisor Lite"
+  APP_ENVIRONMENT: "production"
+  APP_THEME_COLOR: "#1f4e79"
+  APP_MESSAGE: "Deployed on Kubernetes via CI/CD pipeline"

@@ -42,6 +42,16 @@ class AdvisorControllerTest {
     }
 
     @Test
+    void configEndpointReturnsSettings() throws Exception {
+        mockMvc.perform(get("/api/config"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("RoboAdvisor Lite"))
+                .andExpect(jsonPath("$.environment").value("local"))
+                .andExpect(jsonPath("$.themeColor").exists())
+                .andExpect(jsonPath("$.message").exists());
+    }
+
+    @Test
     void homePageIsServed() throws Exception {
         mockMvc.perform(get("/index.html"))
                 .andExpect(status().isOk());

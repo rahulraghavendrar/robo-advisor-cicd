@@ -18,6 +18,11 @@ spec:
     metadata:
       labels:
         app: robo-advisor
+      annotations:
+        # Replaced by the Ansible playbook with the SHA-256 of configmap.yaml.
+        # When the ConfigMap changes, this value changes, so Kubernetes rolls out new pods
+        # that read the new environment variables.
+        checksum/config: "not-set"
     spec:
       containers:
         - name: robo-advisor
@@ -26,6 +31,10 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
+          # Load every key of the ConfigMap as an environment variable
+          envFrom:
+            - configMapRef:
+                name: robo-advisor-config
           resources:
             requests:
               cpu: 100m
